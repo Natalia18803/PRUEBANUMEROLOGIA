@@ -1,0 +1,49 @@
+require('dotenv').config();
+const express = require('express');
+const { conectarMongo } = require('./database/cnx-mongo')
+
+const app = express();
+
+// Middleware para parsear JSON
+app.use(express.json());
+
+// Conectar a MongoDB
+conectarMongo();
+
+// Rutas
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/usuarios', require('./routes/usuarioRoutes'));
+app.use('/api/pagos', require('./routes/pagoRoutes'));
+app.use('/api/lecturas', require('./routes/lecturaRoutes'));
+
+
+// Ruta de prueba
+app.get('/', (req, res) => {
+    res.send('API de Numerología funcionando');
+});
+
+// Ruta de health check para verificar conexión a la base de datos
+app.get('/api/health', async (req, res) => {
+    try {
+        const mongoose = require('mongoose');
+        const state = mongoose.connection.readyState;
+        // 0 = desconectado, 1 = conectado, 2 = conectando, 3 = desconectando
+        if (state === 1) {
+            res.status(200).json({ status: 'OK', message: 'Base de datos conectada' });
+        } else {
+            res.status(500).json({ status: 'ERROR', message: 'Base de datos no conectada' });
+        }
+    } catch (error) {
+        console.error('Error en health check:', error);
+        return res.status(500).json({ status: 'ERROR', message: 'Error verificando conexión a la base de datos' });
+    }
+
+});
+
+// Puerto del servidor
+const PORT = process.env.PORT || 3000;
+
+// Iniciar servidor
+app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+});
